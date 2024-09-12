@@ -1,6 +1,9 @@
-use crate::futures::model::*;
-use crate::client::*;
-use crate::errors::*;
+use error_chain::bail;
+
+use crate::model::Empty;
+use crate::futures::model::{ExchangeInformation, ServerTime, Symbol};
+use crate::client::Client;
+use crate::errors::Result;
 use crate::api::API;
 use crate::api::Futures;
 
@@ -12,7 +15,8 @@ pub struct FuturesGeneral {
 impl FuturesGeneral {
     // Test connectivity
     pub fn ping(&self) -> Result<String> {
-        self.client.get(API::Futures(Futures::Ping), None)?;
+        self.client
+            .get::<Empty>(API::Futures(Futures::Ping), None)?;
         Ok("pong".into())
     }
 

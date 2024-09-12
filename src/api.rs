@@ -1,14 +1,14 @@
-use crate::account::*;
-use crate::client::*;
-use crate::config::*;
+use crate::account::Account;
+use crate::client::Client;
+use crate::config::Config;
 use crate::futures::account::FuturesAccount;
-use crate::futures::general::*;
-use crate::futures::market::*;
-use crate::futures::userstream::*;
-use crate::general::*;
-use crate::market::*;
-use crate::userstream::*;
-use crate::savings::*;
+use crate::futures::general::FuturesGeneral;
+use crate::futures::market::FuturesMarket;
+use crate::futures::userstream::FuturesUserStream;
+use crate::general::General;
+use crate::market::Market;
+use crate::userstream::UserStream;
+use crate::savings::Savings;
 
 #[allow(clippy::all)]
 pub enum API {
@@ -50,6 +50,7 @@ pub enum Sapi {
     AllCoins,
     AssetDetail,
     DepositAddress,
+    SpotFuturesTransfer,
 }
 
 pub enum Futures {
@@ -71,6 +72,8 @@ pub enum Futures {
     BookTicker,
     AllForceOrders,
     AllOpenOrders,
+    AllOrders,
+    UserTrades,
     Order,
     PositionRisk,
     Balance,
@@ -84,9 +87,12 @@ pub enum Futures {
     LvtKlines,
     IndexInfo,
     ChangeInitialLeverage,
+    MarginType,
+    PositionMargin,
     Account,
     OpenOrders,
     UserDataStream,
+    Income,
 }
 
 impl From<API> for String {
@@ -121,6 +127,7 @@ impl From<API> for String {
                 Sapi::AllCoins => "/sapi/v1/capital/config/getall",
                 Sapi::AssetDetail => "/sapi/v1/asset/assetDetail",
                 Sapi::DepositAddress => "/sapi/v1/capital/deposit/address",
+                Sapi::SpotFuturesTransfer => "/sapi/v1/futures/transfer",
             },
             API::Futures(route) => match route {
                 Futures::Ping => "/fapi/v1/ping",
@@ -141,6 +148,8 @@ impl From<API> for String {
                 Futures::BookTicker => "/fapi/v1/ticker/bookTicker",
                 Futures::AllForceOrders => "/fapi/v1/allForceOrders",
                 Futures::AllOpenOrders => "/fapi/v1/allOpenOrders",
+                Futures::AllOrders => "/fapi/v1/allOrders",
+                Futures::UserTrades => "/fapi/v1/userTrades",
                 Futures::PositionSide => "/fapi/v1/positionSide/dual",
                 Futures::Order => "/fapi/v1/order",
                 Futures::PositionRisk => "/fapi/v2/positionRisk",
@@ -154,9 +163,12 @@ impl From<API> for String {
                 Futures::LvtKlines => "/fapi/v1/lvtKlines",
                 Futures::IndexInfo => "/fapi/v1/indexInfo",
                 Futures::ChangeInitialLeverage => "/fapi/v1/leverage",
+                Futures::MarginType => "/fapi/v1/marginType",
+                Futures::PositionMargin => "/fapi/v1/positionMargin",
                 Futures::Account => "/fapi/v2/account",
                 Futures::OpenOrders => "/fapi/v1/openOrders",
                 Futures::UserDataStream => "/fapi/v1/listenKey",
+                Futures::Income => "/fapi/v1/income",
             },
         })
     }

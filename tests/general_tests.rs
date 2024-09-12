@@ -6,17 +6,19 @@ use binance::model::*;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mockito::mock;
+    use mockito::Server;
     use float_cmp::*;
 
     #[test]
     fn ping() {
-        let mock_ping = mock("GET", "/api/v3/ping")
+        let mut server = Server::new();
+        let mock_ping = server
+            .mock("GET", "/api/v3/ping")
             .with_header("content-type", "application/json;charset=UTF-8")
             .with_body("{}")
             .create();
 
-        let config = Config::default().set_rest_api_endpoint(mockito::server_url());
+        let config = Config::default().set_rest_api_endpoint(server.url());
         let general: General = Binance::new_with_config(None, None, &config);
 
         let pong = general.ping().unwrap();
@@ -27,12 +29,14 @@ mod tests {
 
     #[test]
     fn get_server_time() {
-        let mock_server_time = mock("GET", "/api/v3/time")
+        let mut server = Server::new();
+        let mock_server_time = server
+            .mock("GET", "/api/v3/time")
             .with_header("content-type", "application/json;charset=UTF-8")
             .with_body_from_file("tests/mocks/general/server_time.json")
             .create();
 
-        let config = Config::default().set_rest_api_endpoint(mockito::server_url());
+        let config = Config::default().set_rest_api_endpoint(server.url());
         let general: General = Binance::new_with_config(None, None, &config);
 
         let server_time = general.get_server_time().unwrap();
@@ -43,12 +47,14 @@ mod tests {
 
     #[test]
     fn exchange_info() {
-        let mock_exchange_info = mock("GET", "/api/v3/exchangeInfo")
+        let mut server = Server::new();
+        let mock_exchange_info = server
+            .mock("GET", "/api/v3/exchangeInfo")
             .with_header("content-type", "application/json;charset=UTF-8")
             .with_body_from_file("tests/mocks/general/exchange_info.json")
             .create();
 
-        let config = Config::default().set_rest_api_endpoint(mockito::server_url());
+        let config = Config::default().set_rest_api_endpoint(server.url());
         let general: General = Binance::new_with_config(None, None, &config);
 
         let exchange_info = general.exchange_info().unwrap();
@@ -59,12 +65,14 @@ mod tests {
 
     #[test]
     fn get_symbol_info() {
-        let mock_exchange_info = mock("GET", "/api/v3/exchangeInfo")
+        let mut server = Server::new();
+        let mock_exchange_info = server
+            .mock("GET", "/api/v3/exchangeInfo")
             .with_header("content-type", "application/json;charset=UTF-8")
             .with_body_from_file("tests/mocks/general/exchange_info.json")
             .create();
 
-        let config = Config::default().set_rest_api_endpoint(mockito::server_url());
+        let config = Config::default().set_rest_api_endpoint(server.url());
         let general: General = Binance::new_with_config(None, None, &config);
 
         let symbol = general.get_symbol_info("BNBBTC").unwrap();
@@ -84,9 +92,9 @@ mod tests {
         assert_eq!(symbol.order_types[3], "STOP_LOSS_LIMIT");
         assert_eq!(symbol.order_types[4], "TAKE_PROFIT_LIMIT");
 
-        assert_eq!(symbol.iceberg_allowed, true);
-        assert_eq!(symbol.is_spot_trading_allowed, true);
-        assert_eq!(symbol.is_margin_trading_allowed, true);
+        assert!(symbol.iceberg_allowed);
+        assert!(symbol.is_spot_trading_allowed);
+        assert!(symbol.is_margin_trading_allowed);
 
         assert!(!symbol.filters.is_empty());
 
@@ -127,7 +135,7 @@ mod tests {
                 } => {
                     assert!(notional.is_none());
                     assert_eq!(min_notional.unwrap(), "0.00010000");
-                    assert_eq!(apply_to_market.unwrap(), true);
+                    assert!(apply_to_market.unwrap());
                     assert!(approx_eq!(f64, avg_price_mins.unwrap(), 5.0, ulps = 2));
                 }
                 Filters::IcebergParts { limit } => {

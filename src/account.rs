@@ -1,8 +1,13 @@
-use crate::util::*;
-use crate::model::*;
-use crate::client::*;
-use crate::errors::*;
+use error_chain::bail;
+
+use crate::util::{build_signed_request, is_start_time_valid};
+use crate::model::{
+    AccountInformation, Balance, Empty, Order, OrderCanceled, TradeHistory, Transaction,
+};
+use crate::client::Client;
+use crate::errors::Result;
 use std::collections::BTreeMap;
+use std::fmt::Display;
 use crate::api::API;
 use crate::api::Spot;
 
@@ -39,12 +44,23 @@ pub enum OrderType {
     StopLossLimit,
 }
 
-impl From<OrderType> for String {
-    fn from(item: OrderType) -> Self {
-        match item {
-            OrderType::Limit => String::from("LIMIT"),
-            OrderType::Market => String::from("MARKET"),
-            OrderType::StopLossLimit => String::from("STOP_LOSS_LIMIT"),
+impl OrderType {
+    pub fn from_int(value: i32) -> Option<Self> {
+        match value {
+            1 => Some(OrderType::Limit),
+            2 => Some(OrderType::Market),
+            3 => Some(OrderType::StopLossLimit),
+            _ => None,
+        }
+    }
+}
+
+impl Display for OrderType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Limit => write!(f, "LIMIT"),
+            Self::Market => write!(f, "MARKET"),
+            Self::StopLossLimit => write!(f, "STOP_LOSS_LIMIT"),
         }
     }
 }
@@ -54,11 +70,21 @@ pub enum OrderSide {
     Sell,
 }
 
-impl From<OrderSide> for String {
-    fn from(item: OrderSide) -> Self {
-        match item {
-            OrderSide::Buy => String::from("BUY"),
-            OrderSide::Sell => String::from("SELL"),
+impl OrderSide {
+    pub fn from_int(value: i32) -> Option<Self> {
+        match value {
+            1 => Some(OrderSide::Buy),
+            2 => Some(OrderSide::Sell),
+            _ => None,
+        }
+    }
+}
+
+impl Display for OrderSide {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Buy => write!(f, "BUY"),
+            Self::Sell => write!(f, "SELL"),
         }
     }
 }
@@ -70,12 +96,23 @@ pub enum TimeInForce {
     FOK,
 }
 
-impl From<TimeInForce> for String {
-    fn from(item: TimeInForce) -> Self {
-        match item {
-            TimeInForce::GTC => String::from("GTC"),
-            TimeInForce::IOC => String::from("IOC"),
-            TimeInForce::FOK => String::from("FOK"),
+impl TimeInForce {
+    pub fn from_int(value: i32) -> Option<Self> {
+        match value {
+            1 => Some(TimeInForce::GTC),
+            2 => Some(TimeInForce::IOC),
+            3 => Some(TimeInForce::FOK),
+            _ => None,
+        }
+    }
+}
+
+impl Display for TimeInForce {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::GTC => write!(f, "GTC"),
+            Self::IOC => write!(f, "IOC"),
+            Self::FOK => write!(f, "FOK"),
         }
     }
 }
@@ -178,7 +215,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let buy: OrderRequest = OrderRequest {
+        let buy = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -201,7 +238,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let buy: OrderRequest = OrderRequest {
+        let buy = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -224,7 +261,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -247,7 +284,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -270,7 +307,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let buy: OrderRequest = OrderRequest {
+        let buy = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price: 0.0,
@@ -293,7 +330,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let buy: OrderRequest = OrderRequest {
+        let buy = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price: 0.0,
@@ -318,7 +355,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let buy: OrderQuoteQuantityRequest = OrderQuoteQuantityRequest {
+        let buy = OrderQuoteQuantityRequest {
             symbol: symbol.into(),
             quote_order_qty: quote_order_qty.into(),
             price: 0.0,
@@ -342,7 +379,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let buy: OrderQuoteQuantityRequest = OrderQuoteQuantityRequest {
+        let buy = OrderQuoteQuantityRequest {
             symbol: symbol.into(),
             quote_order_qty: quote_order_qty.into(),
             price: 0.0,
@@ -364,7 +401,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price: 0.0,
@@ -387,7 +424,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price: 0.0,
@@ -412,7 +449,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderQuoteQuantityRequest = OrderQuoteQuantityRequest {
+        let sell = OrderQuoteQuantityRequest {
             symbol: symbol.into(),
             quote_order_qty: quote_order_qty.into(),
             price: 0.0,
@@ -436,7 +473,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderQuoteQuantityRequest = OrderQuoteQuantityRequest {
+        let sell = OrderQuoteQuantityRequest {
             symbol: symbol.into(),
             quote_order_qty: quote_order_qty.into(),
             price: 0.0,
@@ -473,7 +510,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -511,7 +548,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -549,7 +586,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -587,7 +624,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -614,7 +651,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -641,7 +678,7 @@ impl Account {
         S: Into<String>,
         F: Into<f64>,
     {
-        let sell: OrderRequest = OrderRequest {
+        let sell = OrderRequest {
             symbol: symbol.into(),
             qty: qty.into(),
             price,
@@ -686,6 +723,8 @@ impl Account {
         self.client
             .delete_signed(API::Spot(Spot::Order), Some(request))
     }
+
+    pub fn cancel_order_with_client_id_rs<S>() {}
     /// Place a test cancel order
     ///
     /// This order is sandboxed: it is validated, but not sent to the matching engine.
@@ -715,12 +754,55 @@ impl Account {
             .get_signed(API::Spot(Spot::MyTrades), Some(request))
     }
 
+    // Trade history starting from selected date
+    pub fn trade_history_from<S>(&self, symbol: S, start_time: u64) -> Result<Vec<TradeHistory>>
+        where
+            S: Into<String>,
+    {
+        if !is_start_time_valid(&start_time) {
+            return bail!("Start time should be less than the current time");
+        }
+
+        let mut parameters: BTreeMap<String, String> = BTreeMap::new();
+        parameters.insert("symbol".into(), symbol.into());
+        parameters.insert("startTime".into(), start_time.to_string());
+        let request = build_signed_request(parameters, self.recv_window)?;
+        self.client
+            .get_signed(API::Spot(Spot::MyTrades), Some(request))
+    }
+
+    // Trade history starting from selected time to some time
+    pub fn trade_history_from_to<S>(&self, symbol: S, start_time: u64, end_time: u64) -> Result<Vec<TradeHistory>>
+        where
+            S: Into<String>,
+    {
+        if end_time <= start_time {
+            return bail!("End time should be greater than start time");
+        }
+        if !is_start_time_valid(&start_time) {
+            return bail!("Start time should be less than the current time");
+        }
+        self.get_trades(symbol, start_time, end_time)
+    }
+
+    fn get_trades<S>(&self, symbol: S, start_time: u64, end_time: u64) -> Result<Vec<TradeHistory>>
+        where
+            S: Into<String>,
+    {
+        let mut trades = match self.trade_history_from(symbol, start_time) {
+            Ok(trades) => trades,
+            Err(e) => return Err(e),
+        };
+        trades.retain(|trade| trade.time <= end_time);
+        Ok(trades)
+    }
+
     fn build_order(&self, order: OrderRequest) -> BTreeMap<String, String> {
         let mut order_parameters: BTreeMap<String, String> = BTreeMap::new();
 
         order_parameters.insert("symbol".into(), order.symbol);
-        order_parameters.insert("side".into(), order.order_side.into());
-        order_parameters.insert("type".into(), order.order_type.into());
+        order_parameters.insert("side".into(), order.order_side.to_string());
+        order_parameters.insert("type".into(), order.order_type.to_string());
         order_parameters.insert("quantity".into(), order.qty.to_string());
 
         if let Some(stop_price) = order.stop_price {
@@ -729,7 +811,7 @@ impl Account {
 
         if order.price != 0.0 {
             order_parameters.insert("price".into(), order.price.to_string());
-            order_parameters.insert("timeInForce".into(), order.time_in_force.into());
+            order_parameters.insert("timeInForce".into(), order.time_in_force.to_string());
         }
 
         if let Some(client_order_id) = order.new_client_order_id {
@@ -745,13 +827,13 @@ impl Account {
         let mut order_parameters: BTreeMap<String, String> = BTreeMap::new();
 
         order_parameters.insert("symbol".into(), order.symbol);
-        order_parameters.insert("side".into(), order.order_side.into());
-        order_parameters.insert("type".into(), order.order_type.into());
+        order_parameters.insert("side".into(), order.order_side.to_string());
+        order_parameters.insert("type".into(), order.order_type.to_string());
         order_parameters.insert("quoteOrderQty".into(), order.quote_order_qty.to_string());
 
         if order.price != 0.0 {
             order_parameters.insert("price".into(), order.price.to_string());
-            order_parameters.insert("timeInForce".into(), order.time_in_force.into());
+            order_parameters.insert("timeInForce".into(), order.time_in_force.to_string());
         }
 
         if let Some(client_order_id) = order.new_client_order_id {

@@ -25,6 +25,7 @@ pub struct Symbol {
     pub required_margin_percent: String,
     pub base_asset: String,
     pub quote_asset: String,
+    pub onboard_date: u128,
     pub price_precision: u16,
     pub quantity_precision: u16,
     pub base_asset_precision: u64,
@@ -74,6 +75,30 @@ pub struct PriceStats {
     pub first_id: u64,
     pub last_id: u64,
     pub count: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TradeHistory {
+    pub buyer: bool,
+    #[serde(with = "string_or_float")]
+    pub commission: f64,
+    pub commission_asset: String,
+    pub id: u64,
+    pub maker: bool,
+    pub order_id: u64,
+    #[serde(with = "string_or_float")]
+    pub price: f64,
+    #[serde(with = "string_or_float")]
+    pub qty: f64,
+    #[serde(with = "string_or_float")]
+    pub quote_qty: f64,
+    #[serde(with = "string_or_float")]
+    pub realized_pnl: f64,
+    pub side: String,
+    pub position_side: String,
+    pub symbol: String,
+    pub time: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -585,4 +610,18 @@ pub struct OrderTradeEvent {
 
     #[serde(rename = "o")]
     pub order: OrderUpdate,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Income {
+    pub symbol: String,
+    pub income_type: String,
+    #[serde(with = "string_or_float")]
+    pub income: f64,
+    pub asset: String,
+    pub info: String,
+    pub time: u64,
+    pub tran_id: u64,
+    pub trade_id: String,
 }
