@@ -672,7 +672,7 @@ pub struct IndexPriceEvent {
     #[serde(rename = "i")]
     pub pair: String,
 
-    #[serde(rename = "p")]
+    #[serde(rename = "3")]
     pub price: String,
 }
 // https://binance-docs.github.io/apidocs/futures/en/#mark-price-stream
@@ -680,29 +680,29 @@ pub struct IndexPriceEvent {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MarkPriceEvent {
-    #[serde(rename = "E")]
-    pub event_time: u64,
-
-    #[serde(rename = "P")]
-    pub estimate_settle_price: String,
-
-    #[serde(rename = "T")]
-    pub next_funding_time: u64,
-
     #[serde(rename = "e")]
-    pub event_type: String,
+    pub event_type: String, // Event type
 
-    #[serde(rename = "i")]
-    pub index_price: Option<String>,
-
-    #[serde(rename = "p")]
-    pub mark_price: String,
-
-    #[serde(rename = "r")]
-    pub funding_rate: String,
+    #[serde(rename = "E")]
+    pub event_time: u64, // Event time
 
     #[serde(rename = "s")]
-    pub symbol: String,
+    pub symbol: String, // Symbol
+
+    #[serde(rename = "p")]
+    pub mark_price: String, // Mark price
+
+    #[serde(rename = "i")]
+    pub index_price: String, // Index price
+
+    #[serde(rename = "P")]
+    pub estimate_settle_price: String, // Estimated Settle Price, only useful in the last hour before the settlement starts
+
+    #[serde(rename = "r")]
+    pub funding_rate: String, // Funding rate
+
+    #[serde(rename = "T")]
+    pub next_funding_time: u64, // Next funding time
 }
 
 // Object({"E": Number(1626118018407), "e": String("forceOrder"), "o": Object({"S": String("SELL"), "T": Number(1626118018404), "X": String("FILLED"), "ap": String("33028.07"), "f": String("IOC"), "l": String("0.010"), "o": String("LIMIT"), "p": String("32896.00"), "q": String("0.010"), "s": String("BTCUSDT"), "z": String("0.010")})})
@@ -761,20 +761,29 @@ pub struct LiquidationOrder {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct BookTickerEvent {
+    #[serde(rename = "e")]
+    pub event_type: String,
+
     #[serde(rename = "u")]
     pub update_id: u64,
+
+    #[serde(rename = "E")]
+    pub event_time: u64,
+
+    #[serde(rename = "T")]
+    pub transaction_time: u64,
 
     #[serde(rename = "s")]
     pub symbol: String,
 
     #[serde(rename = "b")]
-    pub best_bid: String,
+    pub best_bid_price: String,
 
     #[serde(rename = "B")]
     pub best_bid_qty: String,
 
     #[serde(rename = "a")]
-    pub best_ask: String,
+    pub best_ask_price: String,
 
     #[serde(rename = "A")]
     pub best_ask_qty: String,
